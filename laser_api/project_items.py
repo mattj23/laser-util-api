@@ -24,6 +24,13 @@ class ProjectItem:
         return str(self.id)
 
     @property
+    def short_type_name(self) -> str:
+        return self.type_name.replace("ViewModel", "")
+
+    def __repr__(self):
+        return f"[{self.short_type_name} ({str(self.id)[:8]}) {self._name}]"
+
+    @property
     def name(self) -> str:
         return self._name
 
@@ -72,6 +79,11 @@ class ProjectItem:
             raise Exception("Failed to set entity origin parent")
         self._origin_parent = value
 
+    def delete(self):
+        data = request("DeleteEntity", params=[self._id_str()])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to delete entity")
 
 
 
