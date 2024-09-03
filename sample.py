@@ -1,7 +1,12 @@
-from laser_api import Vector, EtchElements, Units
+from laser_api import Vector, ApiClient, Units
 
 
 def main():
+    client = ApiClient(units=Units.INCHES)
+    etch = client.create_etch()
+    etch.name = "RPC Created Etch"
+
+
     pocket_corner = Vector(0.75, -0.775)
     first_tooth_x = 0.2
     tooth_pitch = 0.1
@@ -17,8 +22,6 @@ def main():
 
     # The spacing between a pocket and its diagonal neighbor
     pocket_spacing = Vector(8.0, -14.355 / 9.0)
-
-    elements = EtchElements(units=Units.INCHES)
 
     for row in range(10):
         for col in range(2):
@@ -40,12 +43,9 @@ def main():
                 # Point at the top of the printable area
                 top = bottom + d
 
-                elements.add_line(bottom, lower_end, 0.01)
-                elements.add_text(center, 0, f"{i}", 1, 1, 1)
-                elements.add_line(top, upper_end, 0.01)
-
-    with open("test.json", "w") as f:
-        elements.write(f)
+                etch.add_line(bottom, lower_end, 0.01)
+                etch.add_text(center, 0, f"{i}", 1, 1, 1)
+                etch.add_line(top, upper_end, 0.01)
 
 
 if __name__ == "__main__":

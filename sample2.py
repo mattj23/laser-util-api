@@ -1,8 +1,6 @@
 import math
 
-from laser_api import Vector, Units
-from laser_api.client import ApiClient
-from laser_api.vector import Xyr
+from laser_api import Vector, Units, Xyr, ApiClient
 
 
 def main():

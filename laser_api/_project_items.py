@@ -4,13 +4,13 @@ from typing import Optional, Union
 from jsonrpcclient import request, Ok
 from uuid import UUID
 
-from laser_api._client_interface import ApiInterface
-from laser_api.vector import Xyr
+from ._client_interface import ApiInterface
+from .vector import Xyr
 
 
 class ProjectItem:
     def __init__(self, values: dict, interface: ApiInterface):
-        self.type_name = values["TypeName"]
+        self.type_name = values["TypeName"].replace("ViewModel", "")
         self.id = UUID(values["Info"]["Id"])
         self._interface = interface
 
@@ -23,12 +23,8 @@ class ProjectItem:
     def _id_str(self) -> str:
         return str(self.id)
 
-    @property
-    def short_type_name(self) -> str:
-        return self.type_name.replace("ViewModel", "")
-
     def __repr__(self):
-        return f"[{self.short_type_name} ({str(self.id)[:8]}) {self._name}]"
+        return f"[{self.type_name} ({str(self.id)[:8]}) {self._name}]"
 
     @property
     def name(self) -> str:
@@ -84,6 +80,5 @@ class ProjectItem:
         response = self._interface(data)
         if not response.result:
             raise Exception("Failed to delete entity")
-
 
 

@@ -1,7 +1,27 @@
 from __future__ import annotations
+
+from enum import Enum
+
 import numpy
 from dataclasses import dataclass
 from typing import Union
+
+
+class Units(Enum):
+    INCHES = 1
+    MM = 2
+
+    def to_mm(self, value):
+        if self == Units.INCHES:
+            return value * 25.4
+        else:
+            return value
+
+    def from_mm(self, value):
+        if self == Units.INCHES:
+            return value / 25.4
+        else:
+            return value
 
 
 @dataclass

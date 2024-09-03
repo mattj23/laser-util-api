@@ -2,13 +2,15 @@ import socket
 import json
 from typing import Union
 
-from .laser import Units
+from ._etch_item import EtchItem
+from .vector import Units
 from ._client_interface import ApiInterface
 from ._loop_workspace import LoopScratchPad, LoopHandle
 from ._body_workspace import BodyHandle, BodyScratchPad
+from ._item_factory import create_entity
 from jsonrpcclient import request, parse, Error, Ok
 
-from .project_items import ProjectItem
+from ._project_items import ProjectItem
 
 
 class ScratchPad:
@@ -90,7 +92,7 @@ class ApiClient:
     def project_items(self) -> list[ProjectItem]:
         data = request("GetEntities")
         response = self._rpc(data)
-        return [ProjectItem(item, self._interface) for item in response.result]
+        return [create_entity(item, self._interface) for item in response.result]
 
     # ==========================================================================================
     # Body Entity Creation
@@ -106,3 +108,13 @@ class ApiClient:
 
         response = self._rpc(data)
         return ProjectItem(response.result, self._interface)
+
+    # ==========================================================================================
+    # Etch Entity Creation
+    # ==========================================================================================
+
+    def create_etch(self) -> EtchItem:
+        data = request("CreateEtchEntityEmpty")
+        response = self._rpc(data)
+        return EtchItem(response.result, self._interface)
+
