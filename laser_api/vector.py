@@ -5,6 +5,21 @@ from typing import Union
 
 
 @dataclass
+class Xyr:
+    x: float
+    y: float
+    r: float
+
+    @staticmethod
+    def from_dict(d: dict) -> Xyr:
+        return Xyr(d["X"], d["Y"], d["R"])
+
+    @staticmethod
+    def identity() -> Xyr:
+        return Xyr(0, 0, 0)
+
+
+@dataclass
 class Vector:
     x: float
     y: float

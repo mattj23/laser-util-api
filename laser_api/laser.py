@@ -18,6 +18,12 @@ class Units(Enum):
         else:
             return value
 
+    def from_mm(self, value):
+        if self == Units.INCHES:
+            return value / 25.4
+        else:
+            return value
+
 
 @dataclass
 class EtchLine:
