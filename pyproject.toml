@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "laser-util-api"
+version = "0.1.0"
+description = "A simple Python API for the Laser Utilility project"
+dependencies = [
+    "numpy~=2.0.1",
+    "jsonrpcclient~=4.0.3",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Matt Jarvis", email = "mattj23@gmail.com"},
+]
+
+[project.urls]
+Homepage = "https://github.com/mattj23/laser-util-api"
+Repository = "https://github.com/mattj23/laser-util-api.git"
