@@ -2,20 +2,23 @@ import socket
 import json
 from typing import Union
 
-from .vector import Vector
 from .laser import Units
 from ._client_interface import ApiInterface
-from .loop_ops import LoopScratchPad, LoopHandle
+from ._loop_workspace import LoopScratchPad, LoopHandle
+from ._body_workspace import BodyHandle, BodyScratchPad
 from jsonrpcclient import request, parse, Error, Ok
 
 from .project_items import ProjectItem
 
+
 class ScratchPad:
     def __init__(self, interface: ApiInterface):
         self.loops = LoopScratchPad(interface)
+        self.bodies = BodyScratchPad(interface)
+
 
 class ApiClient:
-    def __init__(self, port: int = 5000, host: str = "localhost", units = Units.MM):
+    def __init__(self, port: int = 5000, host: str = "localhost", units=Units.MM):
         self.port = port
         self.host = host
         self.socket = None
@@ -93,10 +96,13 @@ class ApiClient:
     # Body Entity Creation
     # ==========================================================================================
 
-    def create_body(self, source: Union[LoopHandle]) -> ProjectItem:
-        data = request("CreateBodyEntityFromLoop", params=[source.id])
+    def create_body(self, source: Union[LoopHandle, BodyHandle]) -> ProjectItem:
+        if isinstance(source, LoopHandle):
+            data = request("CreateBodyEntityFromLoop", params=[source.id])
+        elif isinstance(source, BodyHandle):
+            data = request("CreateBodyEntityFromBody", params=[source.id])
+        else:
+            raise ValueError("source must be a LoopHandle or BodyHandle")
+
         response = self._rpc(data)
         return ProjectItem(response.result, self._interface)
-
-
-

@@ -15,7 +15,7 @@ class LoopHandle:
         return response.result
 
     def reverse(self):
-        data = request("LoopReverse", params=self.id)
+        data = request("LoopReverse", params=(self.id, ))
         response = self._interface(data)
         return response.result
 

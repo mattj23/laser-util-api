@@ -13,8 +13,19 @@ def main():
     loop.insert_seg_abs(Vector(1, 2))
     loop.insert_seg_abs(Vector(0, 2))
 
-    body = client.create_body(loop)
-    body.name = "RPC Created Loop"
+    body = client.scratch.bodies.create(loop)
+
+    cut0 = client.scratch.loops.rectangle(Vector(1, 0.5), 5, 1)
+    cut0.reverse()
+    body.operate(cut0)
+
+    cut1 = client.scratch.loops.circle(Vector(0.375, 0.375), 0.125)
+    cut1.reverse()
+    body.operate(cut1)
+
+    body_entity = client.create_body(body)
+    body_entity.name = "RPC Created Body"
+
 
 def main2():
     client = ApiClient(units=Units.INCHES)
