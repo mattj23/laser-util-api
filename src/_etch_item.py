@@ -67,6 +67,12 @@ class EtchItem(ProjectItem):
         return response.result
 
     def add_line(self, start: Vector, end: Vector, width: float):
+        """
+        Add a line to the etch item.
+        :param start: The starting point of the line
+        :param end: The ending point of the line
+        :param width: The width of the line
+        """
         payload = EtchLine(uuid4(),
                            self._interface.convert_to_api(start),
                             self._interface.convert_to_api(end),
@@ -74,6 +80,15 @@ class EtchItem(ProjectItem):
         self._add_payload([payload])
 
     def add_text(self, position: Vector, r: float, text: str, font_id: int, vertical: int, horizontal: int):
+        """
+        Add text to the etch item.
+        :param position: The reference position of the text
+        :param r: The rotation of the text in radians.
+        :param text: The text to add to the etch item
+        :param font_id: The ID of the font to use, found in the workspace settings under "Fonts"
+        :param vertical: Vertical alignment, 0=Top, 1=Center, 2=Bottom
+        :param horizontal: Horizontal alignment, 0=Left, 1=Center, 2=Right
+        """
         payload = EtchText(uuid4(),
                            self._interface.convert_to_api(position),
                            r,
