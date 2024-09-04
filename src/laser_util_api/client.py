@@ -1,5 +1,7 @@
 import socket
 import json
+import time
+from pathlib import Path
 from typing import Union
 
 from ._etch_item import EtchItem
@@ -51,6 +53,8 @@ class ApiClient:
         if self.socket is None:
             raise Exception("Socket is not connected")
 
+        time.sleep(0.010)
+
         self.socket.settimeout(1)
         response = b""
         while True:
@@ -82,6 +86,23 @@ class ApiClient:
 
     def project_path(self) -> str:
         data = request("GetProjectPath")
+        response = self._rpc(data)
+        return response.result
+
+    def project_save_as(self, path: Union[Path, str]):
+        data = request("SaveProjectAs", params=(str(path), ))
+        response = self._rpc(data)
+        return response.result
+
+    def project_create_new(self):
+        data = request("CreateNewProject")
+        response = self._rpc(data)
+        return response.result
+
+    def project_open(self, path: Union[Path, str]):
+        if isinstance(path, Path):
+            path = str(path)
+        data = request("OpenProject", params=(path, ))
         response = self._rpc(data)
         return response.result
 
