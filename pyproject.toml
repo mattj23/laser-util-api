@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laser-util-api"
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple Python API for the Laser Utility project"
 dependencies = [
     "numpy~=2.0.1",
@@ -20,3 +20,6 @@ authors = [
 [project.urls]
 Homepage = "https://github.com/mattj23/laser-util-api"
 Repository = "https://github.com/mattj23/laser-util-api.git"
+
+[tool.setuptools.packages.find]
+where = ["src"]

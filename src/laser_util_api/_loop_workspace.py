@@ -1,7 +1,7 @@
 from jsonrpcclient import request, Ok
 
-from laser_api import Vector
-from laser_api._client_interface import ApiInterface
+from ._client_interface import ApiInterface
+from .vector import Vector
 
 
 class LoopHandle:

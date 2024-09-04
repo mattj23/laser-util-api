@@ -1,9 +1,6 @@
 from typing import Callable, Union
-
 from jsonrpcclient import Ok
-
-from laser_api import Units
-from .vector import Vector, Transform, Xyr
+from .vector import Vector, Transform, Xyr, Units
 
 
 class ApiInterface:
