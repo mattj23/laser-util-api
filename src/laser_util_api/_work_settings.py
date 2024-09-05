@@ -28,7 +28,8 @@ class MaterialOption:
 
     def __repr__(self):
         suffix = self._rpc.get_units().suffix()
-        return f"[{self.category}, {self._material}, {self._thickness:0.3}{suffix}]"
+        t = self._rpc.convert_from_api(self._thickness)
+        return f"[{self.category}, {self._material}, {t:0.3}{suffix}]"
 
     def set_active(self):
         data = request("SetWorkSettingsSelectedMaterial", params=(self._key,))

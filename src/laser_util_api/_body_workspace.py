@@ -1,5 +1,6 @@
 from jsonrpcclient import request
 
+from . import Xyr
 from ._client_interface import ApiInterface
 from ._loop_workspace import LoopHandle
 
@@ -13,6 +14,15 @@ class BodyHandle:
         """ Perform an operations on the body with the specified loop as the tool. If the loop is positive, it will
         perform an add (union) operation.  If the loop is negative, it will perform a cut (intersection) operation. """
         data = request("BodyOperate", params=(self.id, loop.id))
+        response = self._interface(data)
+        return response.result
+
+    def operate_copies(self, loop: LoopHandle, transforms: list[Xyr]):
+        """ Perform a set of operations on the body with the specified loop as a tool, in which the tool is copied and
+         transformed once for each transform in the list before the operation is done. This allows bulk generation of
+         pattern based features. """
+        t = [{"X": x.x, "Y": x.y, "R": x.r} for x in map(self._interface.convert_to_api, transforms)]
+        data = request("BodyOperateCopies", params=(self.id, loop.id, t))
         response = self._interface(data)
         return response.result
 

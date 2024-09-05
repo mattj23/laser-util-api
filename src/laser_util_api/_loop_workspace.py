@@ -47,11 +47,13 @@ class LoopHandle:
         return response.result
 
     def mirror_x(self, x0: float):
+        x0 = self._interface.convert_to_api(x0)
         data = request("LoopMirrorX", params=(self.id, x0))
         response = self._interface(data)
         return response.result
 
     def mirror_y(self, y0: float):
+        y0 = self._interface.convert_to_api(y0)
         data = request("LoopMirrorY", params=(self.id, y0))
         response = self._interface(data)
         return response.result
