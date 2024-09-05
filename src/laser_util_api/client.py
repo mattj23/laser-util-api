@@ -15,10 +15,97 @@ from jsonrpcclient import request, parse, Error, Ok
 from ._project_items import ProjectItem
 
 
+# ==========================================================================================
+# Body and Loop Scratch Workspace
+# ==========================================================================================
 class ScratchPad:
     def __init__(self, interface: ApiInterface):
         self.loops = LoopScratchPad(interface)
         self.bodies = BodyScratchPad(interface)
+
+# ==========================================================================================
+# High-level Project Methods
+# ==========================================================================================
+class ProjectCommands:
+    def __init__(self, interface: ApiInterface):
+        self._rpc = interface
+
+    def name(self) -> str:
+        data = request("GetProjectName")
+        response = self._rpc(data)
+        print(response)
+        return response.result
+
+    def path(self) -> str:
+        data = request("GetProjectPath")
+        response = self._rpc(data)
+        return response.result
+
+    def save_as(self, path: Union[Path, str]):
+        data = request("SaveProjectAs", params=(str(path),))
+        response = self._rpc(data)
+        return response.result
+
+    def new(self):
+        data = request("CreateNewProject")
+        response = self._rpc(data)
+        return response.result
+
+    def open(self, path: Union[Path, str]):
+        if isinstance(path, Path):
+            path = str(path)
+        data = request("OpenProject", params=(path,))
+        response = self._rpc(data)
+        return response.result
+
+
+# ==========================================================================================
+# Project Tree/Entity Methods
+# ==========================================================================================
+class TreeCommands:
+    def __init__(self, interface: ApiInterface):
+        self._rpc = interface
+
+    def all(self) -> list[ProjectItem]:
+        """ Get all entities in the project """
+        data = request("GetEntities")
+        response = self._rpc(data)
+        return [create_entity(item, self._rpc) for item in response.result]
+
+    def by_id(self, id: str) -> ProjectItem:
+        """ Find an entity by its ID """
+        data = request("FindEntity", params=(id, ))
+        response = self._rpc(data)
+        return create_entity(response.result, self._rpc)
+
+    def with_tag(self, tag: str) -> list[ProjectItem]:
+        """ Find all entities with a specific tag """
+        data = request("GetEntitiesByTag", params=(tag, ))
+        response = self._rpc(data)
+        return [create_entity(item, self._rpc) for item in response.result]
+
+# ==========================================================================================
+# Entity Creation
+# ==========================================================================================
+class CreationCommands:
+    def __init__(self, interface: ApiInterface):
+        self._rpc = interface
+
+    def body(self, source: Union[LoopHandle, BodyHandle]) -> ProjectItem:
+        if isinstance(source, LoopHandle):
+            data = request("CreateBodyEntityFromLoop", params=[source.id])
+        elif isinstance(source, BodyHandle):
+            data = request("CreateBodyEntityFromBody", params=[source.id])
+        else:
+            raise ValueError("source must be a LoopHandle or BodyHandle")
+
+        response = self._rpc(data)
+        return ProjectItem(response.result, self._rpc)
+
+    def etch(self) -> EtchItem:
+        data = request("CreateEtchEntityEmpty")
+        response = self._rpc(data)
+        return EtchItem(response.result, self._rpc)
 
 
 class ApiClient:
@@ -28,7 +115,12 @@ class ApiClient:
         self.socket = None
         self.units = units
         self._interface = ApiInterface(lambda: self.units, self._rpc)
+
+        # Sub-interfaces
         self.scratch = ScratchPad(self._interface)
+        self.project = ProjectCommands(self._interface)
+        self.tree = TreeCommands(self._interface)
+        self.create = CreationCommands(self._interface)
 
     def close(self):
         if self.socket is not None:
@@ -49,13 +141,13 @@ class ApiClient:
         return response
 
     def _receive(self):
-        # Receive a newline-terminated JSON object from the socket with a 1-second timeout
+        # Receive a newline-terminated JSON object from the socket with a 5-second timeout
         if self.socket is None:
             raise Exception("Socket is not connected")
 
         time.sleep(0.010)
 
-        self.socket.settimeout(1)
+        self.socket.settimeout(5)
         response = b""
         while True:
             try:
@@ -73,69 +165,4 @@ class ApiClient:
         if isinstance(result, Error):
             raise Exception(result.message)
         return result
-
-    # ==========================================================================================
-    # High-level Project Methods
-    # ==========================================================================================
-
-    def project_name(self) -> str:
-        data = request("GetProjectName")
-        response = self._rpc(data)
-        print(response)
-        return response.result
-
-    def project_path(self) -> str:
-        data = request("GetProjectPath")
-        response = self._rpc(data)
-        return response.result
-
-    def project_save_as(self, path: Union[Path, str]):
-        data = request("SaveProjectAs", params=(str(path), ))
-        response = self._rpc(data)
-        return response.result
-
-    def project_create_new(self):
-        data = request("CreateNewProject")
-        response = self._rpc(data)
-        return response.result
-
-    def project_open(self, path: Union[Path, str]):
-        if isinstance(path, Path):
-            path = str(path)
-        data = request("OpenProject", params=(path, ))
-        response = self._rpc(data)
-        return response.result
-
-    # ==========================================================================================
-    # Project Tree/Entity Methods
-    # ==========================================================================================
-
-    def project_items(self) -> list[ProjectItem]:
-        data = request("GetEntities")
-        response = self._rpc(data)
-        return [create_entity(item, self._interface) for item in response.result]
-
-    # ==========================================================================================
-    # Body Entity Creation
-    # ==========================================================================================
-
-    def create_body(self, source: Union[LoopHandle, BodyHandle]) -> ProjectItem:
-        if isinstance(source, LoopHandle):
-            data = request("CreateBodyEntityFromLoop", params=[source.id])
-        elif isinstance(source, BodyHandle):
-            data = request("CreateBodyEntityFromBody", params=[source.id])
-        else:
-            raise ValueError("source must be a LoopHandle or BodyHandle")
-
-        response = self._rpc(data)
-        return ProjectItem(response.result, self._interface)
-
-    # ==========================================================================================
-    # Etch Entity Creation
-    # ==========================================================================================
-
-    def create_etch(self) -> EtchItem:
-        data = request("CreateEtchEntityEmpty")
-        response = self._rpc(data)
-        return EtchItem(response.result, self._interface)
 

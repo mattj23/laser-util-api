@@ -15,6 +15,7 @@ class ProjectItem:
         self._interface = interface
 
         self._name = values["Info"]["Name"]
+        self._tags = values["Info"]["Tags"]
 
         self._origin_id = values["Info"]["Origin"]["Id"]
         self._origin_parent = UUID(values["Info"]["Origin"]["ParentId"])
@@ -38,6 +39,23 @@ class ProjectItem:
             raise Exception("Failed to set entity name")
         self._name = value
 
+    @property
+    def tags(self):
+        return tuple(self._tags)
+
+    def add_tag(self, tag: str):
+        data = request("AddTagToEntity", params=[self._id_str(), tag])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to add tag")
+        self._tags.append(tag)
+
+    def remove_tag(self, tag: str):
+        data = request("RemoveTagFromEntity", params=[self._id_str(), tag])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to remove tag")
+        self._tags.remove(tag)
 
     @property
     def origin(self) -> Xyr:
