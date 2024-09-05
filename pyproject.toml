@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laser-util-api"
-version = "0.2.0"
+version = "0.2.1"
 description = "A simple Python API for the Laser Utility project"
 dependencies = [
     "numpy~=2.0.1",
