@@ -12,10 +12,7 @@ Install the `laser-util-api` package from PyPi.  For example, using `pip`:
 pip install laser-util-api
 ```
 
-## Examples
-
-### General Connection and Client Settings
-[sample2.py](..%2Fsample2.py)
+## General Connection and Client Settings
 To connect to the API, the *Laser Utility* program must be running.  In the lower left corner of the software, the RPC server port will be displayed next to a green circle.  The default port is 5000, but concurrent open windows will take the next available port in ascending order.
 
 If no arguments are supplied, the client will default to port 5000 and length units of millimeters.
@@ -32,6 +29,140 @@ Alternatively, port and units can be specified.
 from laser_util_api import ApiClient, Units
 
 client = ApiClient(port=5001, units=Units.INCHES)
+```
+
+## Project-Level Functions
+
+## Work Settings Functions
+
+Work settings functions control things like the selected material, the kerf, and fonts.  They are accessed through the `work_settings` category of the client.
+
+### Materials
+
+The options in the material library can be retrieved and examined.
+
+```python
+from laser_util_api import ApiClient, Units
+
+client = ApiClient(units=Units.INCHES)
+
+options = client.work_settings.material_options()
+for mat in options:
+    print(mat)
+    print(f" {mat.category}, {mat.material}, {mat.thickness:0.3f}, {mat.kerf:0.3f}")
+```
+
+The active material can be retrieved.
+
+```python
+from laser_util_api import ApiClient, Units
+
+client = ApiClient(units=Units.INCHES)
+active = client.work_settings.active_material()
+print(active)
+```
+
+Finally, any material option object can be set as active.
+
+```python
+from laser_util_api import ApiClient, Units
+
+client = ApiClient(units=Units.INCHES)
+
+options = client.work_settings.material_options()
+
+# Just set the last one active, as an example.
+options[-1].set_active()
+```
+
+### Kerf
+
+The kerf is the width of the cut made by the laser.  Boundaries are offset by half of the kerf width before they're cut.  The kerf is a property of the active material option, but it can be overridden in the software to make small adjustments.  A larger kerf makes a larger part, while a smaller kerf makes a smaller part.
+
+The kerf can be read directly, and will come through in the client's units.
+
+```python
+client = ApiClient(units=Units.INCHES)
+
+print(client.work_settings.kerf)
+```
+
+The kerf override can be read and set as if it were a property of `client.work_settings`.
+
+```python
+client = ApiClient(units=Units.INCHES)
+
+print(client.work_settings.kerf_override)
+
+client.work_settings.kerf_override = True
+```
+
+The kerf can only be set if it is overridden.  Setting the kerf is straightforward, but will throw an exception if the kerf override is not active.
+
+```python
+client = ApiClient(units=Units.INCHES)
+
+# This will throw an exception if the kerf override is not on
+client.work_settings.kerf = 0.1
+```
+
+### Fonts
+
+In the work settings there is a library of fonts used for etching.  Each font has an integer ID number, a font family, and a font size.  Fonts are referenced by their ID when creating a text etch element, allowing all text with that font ID to be adjusted at once.  Fonts can be examined, modified, added, and removed through the API.
+
+Getting a list of the active font options is done as follows:
+
+```python
+client = ApiClient()
+
+fonts = client.work_settings.fonts()
+for font in fonts:
+    print(font)
+```
+
+Each font item allows the family and size to be edited.  The family is set as a string of the family name, if the family name does not exist on the system setting it will throw an exception.
+
+```python
+client = ApiClient()
+
+font = client.work_settings.fonts()[0]
+font.size = 16
+font.family = "Courier New"
+```
+
+The list of valid font family names on the system can be retrieved as shown:
+
+```python
+client = ApiClient()
+
+for name in client.work_settings.get_system_font_families():
+    print(name)
+```
+
+A new font can be created using the `create_font` method, and then edited the same way as any other font.
+
+```python
+client = ApiClient()
+
+font = client.work_settings.create_font()
+font.size = 20
+```
+
+A font can be located by its ID.  If the ID does not exist, an exception will be thrown.
+
+```python
+client = ApiClient()
+
+font = client.work_settings.find_font(2)
+```
+
+A font can be deleted if it is not the last font left.
+
+```python
+client = ApiClient()
+
+font = client.work_settings.find_font(2)
+font.delete()
 ```
 
 ### Listing and Editing Existing Project Items

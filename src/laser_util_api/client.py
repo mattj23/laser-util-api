@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 from ._etch_item import EtchItem
+from ._work_settings import MaterialOption, FontOption
 from .vector import Units
 from ._client_interface import ApiInterface
 from ._loop_workspace import LoopScratchPad, LoopHandle
@@ -13,7 +14,6 @@ from ._item_factory import create_entity
 from jsonrpcclient import request, parse, Error, Ok
 
 from ._project_items import ProjectItem
-
 
 # ==========================================================================================
 # Body and Loop Scratch Workspace
@@ -57,6 +57,70 @@ class ProjectCommands:
         data = request("OpenProject", params=(path,))
         response = self._rpc(data)
         return response.result
+
+# ==========================================================================================
+# WorkSettings Methods
+# ==========================================================================================
+class WorkSettingsCommands:
+    def __init__(self, interface: ApiInterface):
+        self._rpc = interface
+
+    def material_options(self) -> list[MaterialOption]:
+        data = request("GetWorkSettingsMaterialOptions")
+        response = self._rpc(data)
+        return [MaterialOption(item, self._rpc) for item in response.result]
+
+    def active_material(self) -> MaterialOption:
+        data = request("GetWorkSettingsSelectedMaterial")
+        response = self._rpc(data)
+        return MaterialOption(response.result, self._rpc)
+
+    @property
+    def kerf(self) -> float:
+        data = request("GetWorkSettingsKerf")
+        response = self._rpc(data)
+        return self._rpc.convert_from_api(response.result)
+
+    @kerf.setter
+    def kerf(self, value: float):
+        data = request("SetWorkSettingsKerf", params=[self._rpc.convert_to_api(value)])
+        response = self._rpc(data)
+        if not response.result:
+            raise Exception("Failed to set kerf")
+
+    @property
+    def kerf_override(self) -> bool:
+        data = request("GetWorkSettingsKerfOverride")
+        response = self._rpc(data)
+        return response.result
+
+    @kerf_override.setter
+    def kerf_override(self, value: bool):
+        data = request("SetWorkSettingsKerfOverride", params=[value])
+        response = self._rpc(data)
+        if not response.result:
+            raise Exception("Failed to set kerf override")
+
+    def fonts(self) -> list[FontOption]:
+        data = request("GetWorkSettingsFonts")
+        response = self._rpc(data)
+        return [FontOption(item, self._rpc) for item in response.result]
+
+    def find_font(self, id: int) -> FontOption:
+        data = request("GetWorkSettingsFont", params=(id,))
+        response = self._rpc(data)
+        return FontOption(response.result, self._rpc)
+
+    def create_font(self) -> FontOption:
+        data = request("CreateWorkSettingsFont")
+        response = self._rpc(data)
+        return FontOption(response.result, self._rpc)
+
+    def get_system_font_families(self) -> list[str]:
+        data = request("GetSystemFontFamilies")
+        response = self._rpc(data)
+        return response.result
+
 
 
 # ==========================================================================================
@@ -121,6 +185,7 @@ class ApiClient:
         self.project = ProjectCommands(self._interface)
         self.tree = TreeCommands(self._interface)
         self.create = CreationCommands(self._interface)
+        self.work_settings = WorkSettingsCommands(self._interface)
 
     def close(self):
         if self.socket is not None:

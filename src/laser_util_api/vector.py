@@ -23,6 +23,8 @@ class Units(Enum):
         else:
             return value
 
+    def suffix(self):
+        return "mm" if self == Units.MM else "in"
 
 @dataclass
 class Xyr:
