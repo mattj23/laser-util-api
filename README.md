@@ -33,6 +33,48 @@ client = ApiClient(port=5001, units=Units.INCHES)
 
 ## Project-Level Functions
 
+Project level functions allow things like saving, loading, and creating new projects, and finding the project name and path.
+
+Saving a project:
+
+```python 
+from laser_util_api import ApiClient
+from pathlib import Path
+
+save_dir = Path("D:\\temp\\laser")
+
+client = ApiClient()
+
+# This will add the correct extension if the path does not end with it already
+client.project.save_as(save_dir / "test")
+```
+
+Loading a project.  *Be warned, the API will not check to see if you want to discard unsaved changes before throwing away the current session*.
+
+```python 
+save_dir = Path("D:\\temp\\laser")
+client = ApiClient()
+
+client.project.open(save_dir / "test.lsrwk")
+```
+
+Creating a new project.  *Be warned, the API will not check to see if you want to discard unsaved changes before throwing away the current session*.
+
+```python 
+client = ApiClient()
+
+client.project.new()
+```
+
+We can also check the name and the path of the currently open project.
+
+```python 
+client = ApiClient()
+
+print(client.project.path())
+print(client.project.name())
+```
+
 ## Work Settings Functions
 
 Work settings functions control things like the selected material, the kerf, and fonts.  They are accessed through the `work_settings` category of the client.
