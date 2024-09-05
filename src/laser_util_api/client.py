@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from typing import Union
 
+from ._common import is_uuid, UUID
 from ._etch_item import EtchItem
 from ._work_settings import MaterialOption, FontOption
 from .vector import Units
@@ -130,13 +131,33 @@ class TreeCommands:
     def __init__(self, interface: ApiInterface):
         self._rpc = interface
 
-    def all(self) -> list[ProjectItem]:
+    def __iter__(self):
+        return _TreeIterator(self._all())
+
+    def __getitem__(self, key: Union[int, str, UUID]):
+        if isinstance(key, int):
+            return self._all()[key]
+
+        if isinstance(key, UUID):
+            return self._by_id(str(key))
+
+        if isinstance(key, str):
+            if is_uuid(key):
+                return self._by_id(key)
+
+            for item in self._all():
+                if str(item.id).startswith(key):
+                    return item
+
+        raise ValueError("key must be an integer, UUID, or string")
+
+    def _all(self) -> list[ProjectItem]:
         """ Get all entities in the project """
         data = request("GetEntities")
         response = self._rpc(data)
         return [create_entity(item, self._rpc) for item in response.result]
 
-    def by_id(self, id: str) -> ProjectItem:
+    def _by_id(self, id: str) -> ProjectItem:
         """ Find an entity by its ID """
         data = request("FindEntity", params=(id, ))
         response = self._rpc(data)
@@ -147,6 +168,21 @@ class TreeCommands:
         data = request("GetEntitiesByTag", params=(tag, ))
         response = self._rpc(data)
         return [create_entity(item, self._rpc) for item in response.result]
+
+class _TreeIterator:
+    def __init__(self, items: list[ProjectItem]):
+        self._items = items
+        self._index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= len(self._items):
+            raise StopIteration
+        item = self._items[self._index]
+        self._index += 1
+        return item
 
 # ==========================================================================================
 # Entity Creation

@@ -55,8 +55,10 @@ class Vector:
     def __neg__(self):
         return Vector(-self.x, -self.y)
 
-    def __mul__(self, other: Union[float, Transform]) -> Vector:
+    def __mul__(self, other: Union[float, Transform, int]) -> Vector:
         if isinstance(other, float):
+            return Vector(self.x * other, self.y * other)
+        if isinstance(other, int):
             return Vector(self.x * other, self.y * other)
         elif isinstance(other, Transform):
             moved = other * numpy.array([self.x, self.y, 1])

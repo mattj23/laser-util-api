@@ -6,6 +6,21 @@ from jsonrpcclient import request
 from .vector import Vector, Xyr, Units
 from ._project_items import ProjectItem
 
+from enum import IntEnum
+
+
+class HAlign(IntEnum):
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
+
+
+class VAlign(IntEnum):
+    TOP = 0
+    CENTER = 1
+    BOTTOM = 2
+
+
 @dataclass
 class EtchLine:
     id: UUID
@@ -60,7 +75,7 @@ class EtchItem(ProjectItem):
 
         prepared = json.dumps([x.to_dict() for x in working])
 
-        data = request("AddEtchEntityItem", params=(self._id_str(), prepared, ))
+        data = request("AddEtchEntityItem", params=(self._id_str(), prepared,))
         response = self._interface(data)
         if not response.result:
             raise Exception("Failed to add etch item")
@@ -75,25 +90,25 @@ class EtchItem(ProjectItem):
         """
         payload = EtchLine(uuid4(),
                            self._interface.convert_to_api(start),
-                            self._interface.convert_to_api(end),
-                            self._interface.convert_to_api(width))
+                           self._interface.convert_to_api(end),
+                           self._interface.convert_to_api(width))
         self._add_payload([payload])
 
-    def add_text(self, position: Vector, r: float, text: str, font_id: int, vertical: int, horizontal: int):
+    def add_text(self, position: Vector, r: float, text: str, font_id: int, vertical: VAlign, horizontal: HAlign):
         """
         Add text to the etch item.
         :param position: The reference position of the text
         :param r: The rotation of the text in radians.
         :param text: The text to add to the etch item
         :param font_id: The ID of the font to use, found in the workspace settings under "Fonts"
-        :param vertical: Vertical alignment, 0=Top, 1=Center, 2=Bottom
-        :param horizontal: Horizontal alignment, 0=Left, 1=Center, 2=Right
+        :param vertical: Vertical alignment
+        :param horizontal: Horizontal alignment
         """
         payload = EtchText(uuid4(),
                            self._interface.convert_to_api(position),
                            r,
                            text,
                            font_id,
-                           vertical,
-                           horizontal)
+                           int(vertical),
+                           int(horizontal))
         self._add_payload([payload])

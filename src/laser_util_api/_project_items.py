@@ -20,12 +20,51 @@ class ProjectItem:
         self._origin_id = values["Info"]["Origin"]["Id"]
         self._origin_parent = UUID(values["Info"]["Origin"]["ParentId"])
         self._origin = self._interface.convert_from_api(Xyr.from_dict(values["Info"]["Origin"]["Xyr"]))
+        self._visible = values["Info"]["IsVisible"]
+        self._suppressed = values["Info"]["IsSuppressed"]
+        self._drag_locked = values["Info"]["IsLocked"]
 
     def _id_str(self) -> str:
         return str(self.id)
 
     def __repr__(self):
         return f"[{self.type_name} ({str(self.id)[:8]}) {self._name}]"
+
+    @property
+    def visible(self) -> bool:
+        return self._visible
+
+    @visible.setter
+    def visible(self, value: bool):
+        data = request("SetEntityVisibility", params=[self._id_str(), value])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to set entity visible")
+        self._visible = value
+
+    @property
+    def drag_locked(self) -> bool:
+        return self._drag_locked
+
+    @drag_locked.setter
+    def drag_locked(self, value: bool):
+        data = request("SetEntityLocked", params=[self._id_str(), value])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to set entity locked")
+        self._drag_locked = value
+
+    @property
+    def for_construction(self) -> bool:
+        return self._suppressed
+
+    @for_construction.setter
+    def for_construction(self, value: bool):
+        data = request("SetEntityForConstruction", params=[self._id_str(), value])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to set entity suppressed")
+        self._suppressed = value
 
     @property
     def name(self) -> str:
@@ -92,6 +131,7 @@ class ProjectItem:
         if not response.result:
             raise Exception("Failed to set entity origin parent")
         self._origin_parent = value
+
 
     def delete(self):
         data = request("DeleteEntity", params=[self._id_str()])

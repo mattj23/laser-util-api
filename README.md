@@ -207,40 +207,138 @@ font = client.work_settings.find_font(2)
 font.delete()
 ```
 
-### Listing and Editing Existing Project Items
+## Project Tree Functions
 
-Project items based on the common workspace entity format can be listed and modified from the API.  These are typically project items which have a name, origin, visibility, etc.
+The project tree is the bar on the left side of the *Laser Utility* GUI which shows the different entities in the project.  A subset of these entities can be interacted with through the Python API using the `tree` category of the client.
+
+Project tree items which can be interacted with are the ones based on the common workspace entity format.  Most project items which have a name, an origin, visibility, for-construction, etc, can be worked with through the API.
+
+### Listing and Finding Project Tree Items
+
+You can iterate directly through the `.tree` category.
+
+```python
+client = ApiClient()
+
+for item in client.tree:
+    print(item)
+```
+
+You can also index into the client tree.  Using an integer will return the item by position, specifying a `UUID` or a string that converts into a `UUID` will directly search the tree using an API call.  Finally, if given a string that can't be converted into a `UUID`, the client will check every project item to see if it's ID starts with the specified text.
+
+```python
+client = ApiClient()
+
+# Get the first item in the tree
+item = client.tree[0]
+
+# Get the item with the specified ID
+item = client.tree["384b9cdd-14bb-4099-82ed-3df3a16015c5"]
+item = client.tree[UUID("384b9cdd-14bb-4099-82ed-3df3a16015c5")]
+
+# Search for the item with an ID starting with the following text
+item = client.tree["384b9"]
+```
+
+Finally, project items can be retrieved based on tags.
+
+```python
+client = ApiClient()
+
+# Get a list of project items that have the given tag.
+items = client.tree.with_tag("my tag")
+```
+
+### Editing Tags
+
+Tags are a feature to help Python scripts label and track project items.  They do not currently appear in the UI.
+
+Tags can be added or removed from items using the following methods:
+
+```python
+client = ApiClient()
+
+# Get the first item in the tree, just for demonstration purposes
+item = client.tree[0]
+
+# Add a tag
+item.add_tag("TEST")
+print(item.tags)
+
+# Remove the tag
+item.remove_tag("TEST")
+print(item.tags)
+```
+
+### Editing Basic Properties
+
+Special project tree items have additional properties, but most items have at least the following.
+
+Setting the name, visibility, drag lock, and construction states of an item.
+
+```python
+client = ApiClient()
+item = client.tree[0]
+
+# Retrieve and set the name
+print(item.name)
+item.name = "Name Changed from API"
+
+# Retrieve and set the visibility
+print(item.visible)
+item.visible = False
+
+# Retrieve and set the drag lock
+print(item.drag_locked)
+item.drag_locked = True
+
+# Retrieve and set the for-construction (suppression) property
+print(item.for_construction)
+item.for_construction = True
+```
+
+The origin X-Y-R can also be set.  The rotation is always in radians.
 
 ```python
 import math
 from laser_util_api import ApiClient, Xyr
 
 client = ApiClient()
-items = client.project_items()
-
-# Print out the existing project tree items
-for item in items:
-    print(item)
-
-# Grab the first item (assuming there's at least one) and change its name
-working = next(items)
-working.name = "Name Changed from API"
+item = client.tree[0]
 
 # Change the value of its origin position
-working.origin = Xyr(100, 200, math.pi / 2)
-
-# Set the parent of the origin to the last item in the list (assuming there's more than one)
-working.origin_parent = items[-1]
-
-# Finally, set the origin parent back to the workspace origin
-working.origin_parent = None
-
-# We can also delete an item with the delete method
-working.delete()
-
+item.origin = Xyr(100, 200, math.pi / 2)
 ```
 
-### The Scratch Workspaces
+The origin parent can be set to another project item, or set back to `None` to reference the workspace origin.
+
+```python
+import math
+from laser_util_api import ApiClient, Xyr
+
+client = ApiClient()
+item = client.tree[0]       # Grab the first item in the tree
+parent = client.tree[-1]    # Grab the last item in the tree
+
+# Set the parent of the origin to the last item in the list 
+item.origin_parent = parent
+
+# Set the origin parent back to the workspace origin
+item.origin_parent = None
+```
+
+### Deleting
+
+Items can be deleted through acquiring their handle and using the `.delete()` method.
+
+```python
+client = ApiClient()
+item = client.tree[0]
+
+item.delete()
+```
+
+## The Scratch Workspaces
 
 There are two scratch workspaces where you can create boundary loops and bodies.  These workspaces are created when the client connects to the application and are disposed when the client disconnects.  Things created in the scratch workspaces are unique to the client and not preserved between sessions.
 
@@ -304,20 +402,22 @@ pos0 = client.scratch.loops.circle(Vector(0, 1), 0.375)
 body.operate(pos0)
 ```
 
-## Creating a Body Project Item
+## Creating Project Items
+
+For now, body and etch project items can be created through the API.  Both are accessible through the `create` category of the client.
+
+### Body Project Item
 
 Creating an actual project item from a body can be done using either a loop or a body.  Both will be immutable after creation, but will persist after the client program ends.
 
 ```python
-from laser_util_api import ApiClient, Vector
-
-client = ApiClient()
+client = ApiClient(units=Units.INCHES)
 
 # Create a circle boundary at 0, 0 with radius 1
 circle = client.scratch.loops.circle(Vector(0, 0), 1)
 
 # Create a circle body project item from the circle loop.
-circle_body = client.create_body(circle)
+circle_body = client.create.body(circle)
 circle_body.name = "Body Item from Boundary Loop"
 
 # Now we'll create a body with a cut from the circle and use it to create a more complex body project item
@@ -326,21 +426,21 @@ cut0 = client.scratch.loops.rectangle(Vector(0, -0.5), 2, 1)
 cut0.reverse()
 body.operate(cut0)
 
-complex_body = client.create_body(body)
+complex_body = client.create.body(body)
 complex_body.name = "Body Item from Body"
 ```
 
-## Creating and Editing an Etch Project Item
+### Creating and Editing an Etch Project Item
 
 Etch project items can have text and lines.  The following is an example of creating graduated scale marks.
 
 ```python
-from laser_util_api import ApiClient, Vector, Units
+from laser_util_api import import ApiClient, Vector, Units, HAlign, VAlign
 
 client = ApiClient(units=Units.INCHES)
 
 # Create the etch entity
-etch = client.create_etch()
+etch = client.create.etch()
 etch.name = "Example Etch Markings"
 
 # From a corner at 1, 2 inches, we'll put marks every 1/2 inch
@@ -348,15 +448,11 @@ corner = Vector(1, 2)
 
 for i in range(5):
     mark = corner + Vector(0.5, 0) * i
-    
+
     # Create a vertical line starting at the mark point, 0.25 in tall, with a width of 0.01 inches
     etch.add_line(mark, mark + Vector(0, 0.25), 0.01)
-    
+
     # Create a text item horizontally centered at the mark, up 0.25 inches. See the
     # function documentation for details
-    etch.add_text(mark - Vector(0, 0.25), 0, f"{i + 1}", 1, 1, 1)
+    etch.add_text(mark - Vector(0, 0.25), 0, f"{i + 1}", 1, VAlign.CENTER, HAlign.CENTER)
 ```
-
-
-
-
