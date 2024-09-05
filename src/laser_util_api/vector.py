@@ -127,98 +127,24 @@ class Transform:
     def __str__(self):
         return numpy.array_str(self.matrix, suppress_small=True, precision=6)
 
-    # def transform_array(self, vectors: numpy.ndarray) -> numpy.ndarray:
-    #     assert vectors.shape[1] == 3
-    #     padded = numpy.hstack((vectors, numpy.ones((vectors.shape[0], 1))))
-    #     return numpy.array(self.matrix.dot(padded.T).T[:, :3])
+    def to_xyr(self) -> Xyr:
+        return Xyr(self.matrix[0, 2], self.matrix[1, 2], numpy.arctan2(self.matrix[1, 0], self.matrix[0, 0]))
 
-    # @staticmethod
-    # def from_basis_vectors(x0: Vector, y0: Vector, origin: Vector) -> Transform:
-    #     # x0 is the main basis vector and the only one which is completely unmodified
-    #     x = x0.unit()
-    #
-    #     # y0 must be projected onto x0 and then normalized to ensure it is orthogonal
-    #     y = (y0 - x * x.dot(y0)).unit()
-    #
-    #     z = x.cross(y).unit()
-    #     t = numpy.eye(4)
-    #     t[:3, 0] = x.to_array()
-    #     t[:3, 1] = y.to_array()
-    #     t[:3, 2] = z.to_array()
-    #     t[:3, 3] = origin.to_array()
-    #     return Transform(t).invert()
-    #
-    # @staticmethod
-    # def from_isometry(d: Dict) -> Transform:
-    #     """ Create a transform from an isometry dictionary that came out of nalgebra """
-    #     i, j, k, w = d["rotation"]
-    #     x, y, z = d["translation"]
-    #
-    #     # First row of the rotation matrix
-    #     r00 = 2 * (w * w + i * i) - 1
-    #     r01 = 2 * (i * j - w * k)
-    #     r02 = 2 * (i * k + w * j)
-    #
-    #     # Second row of the rotation matrix
-    #     r10 = 2 * (i * j + w * k)
-    #     r11 = 2 * (w * w + j * j) - 1
-    #     r12 = 2 * (j * k - w * i)
-    #
-    #     # Third row of the rotation matrix
-    #     r20 = 2 * (i * k - w * j)
-    #     r21 = 2 * (j * k + w * i)
-    #     r22 = 2 * (w * w + k * k) - 1
-    #
-    #     matrix = numpy.array([[r00, r01, r02, x],
-    #                           [r10, r11, r12, y],
-    #                           [r20, r21, r22, z],
-    #                           [0, 0, 0, 1]])
-    #     return Transform(matrix)
-    #
+    @staticmethod
+    def from_xyr(xyr: Xyr) -> Transform:
+        return Transform(numpy.array([[numpy.cos(xyr.r), -numpy.sin(xyr.r), xyr.x],
+                                      [numpy.sin(xyr.r), numpy.cos(xyr.r), xyr.y],
+                                      [0, 0, 1]]))
+
     @staticmethod
     def identity() -> Transform:
         return Transform(numpy.eye(3))
-
-    # @staticmethod
-    # def from_euler(order: str, angles: List[float]):
-    #     matrix = numpy.eye(4)
-    #     matrix[:3, :3] = Rotation.from_euler(order, angles).as_matrix()
-    #     return Transform(matrix)
-    #
-    # @staticmethod
-    # def from_flat(flat: List[float]):
-    #     return Transform(numpy.matrix(flat).reshape(4, 4))
-    #
-    # def to_flat(self):
-    #     return list(self.matrix.flat)
-    #
-    # def rotation_only(self) -> Transform:
-    #     new_matrix = numpy.eye(4)
-    #     new_matrix[:3, :3] = self.matrix[:3, :3]
-    #     return Transform(new_matrix)
-    #
-    # @staticmethod
-    # def rotate_around_axis(theta, axis_vector):
-    #     from math import cos, sin
-    #     u = axis_vector.unit()
-    #     m = [
-    #         [cos(theta) + u.x ** 2 * (1 - cos(theta)), u.x * u.y * (1 - cos(theta)) - u.z * sin(theta),
-    #          u.x * u.z * (1 - cos(theta)) + u.y * sin(theta), 0],
-    #         [u.y * u.x * (1 - cos(theta)) + u.z * sin(theta), cos(theta) + u.y ** 2 * (1 - cos(theta)),
-    #          u.y * u.z * (1 - cos(theta)) - u.x * sin(theta), 0],
-    #         [u.z * u.x * (1 - cos(theta)) - u.y * sin(theta), u.z * u.y * (1 - cos(theta)) + u.x * sin(theta),
-    #          cos(theta) + u.z ** 2 * (1 - cos(theta)), 0],
-    #         [0, 0, 0, 1]
-    #     ]
-    #     return Transform(numpy.matrix(m))
-    #
 
     @staticmethod
     def rotate(theta: float):
         return Transform(numpy.array([[numpy.cos(theta), -numpy.sin(theta), 0],
                                       [numpy.sin(theta), numpy.cos(theta), 0],
                                       [0, 0, 1]]))
-
     @staticmethod
     def translate(*args):
         if len(args) == 2:
@@ -238,23 +164,3 @@ class Transform:
 
     def invert(self) -> Transform:
         return Transform(numpy.linalg.inv(self.matrix))
-
-    # def serialize(self):
-    #     """
-    #     Serialize the transformation into a json encoded dictionary
-    #     """
-    #     return json.dumps(list(list(r) for r in self.matrix))
-    #
-    # def save(self, path):
-    #     with open(path, "w") as handle:
-    #         handle.write(self.serialize())
-    #
-    # @staticmethod
-    # def deserialize(text):
-    #     m = json.loads(text)
-    #     return Transform(numpy.matrix(m))
-    #
-    # @staticmethod
-    # def load(path):
-    #     with open(path, "r") as handle:
-    #         return Transform.deserialize(handle.read())

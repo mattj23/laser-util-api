@@ -1,7 +1,8 @@
+from __future__ import annotations
 from jsonrpcclient import request, Ok
 
 from ._client_interface import ApiInterface
-from .vector import Vector
+from .vector import Vector, Xyr
 
 
 class LoopHandle:
@@ -44,6 +45,32 @@ class LoopHandle:
         data = request("LoopInsertSegRel", params=(self.id, p.x, p.y))
         response = self._interface(data)
         return response.result
+
+    def mirror_x(self, x0: float):
+        data = request("LoopMirrorX", params=(self.id, x0))
+        response = self._interface(data)
+        return response.result
+
+    def mirror_y(self, y0: float):
+        data = request("LoopMirrorY", params=(self.id, y0))
+        response = self._interface(data)
+        return response.result
+
+    def transform(self, xyr: Xyr):
+        t = self._interface.convert_to_api(xyr)
+        data = request("LoopTransform", params=(self.id, t.x, t.y, t.r))
+        response = self._interface(data)
+        return response.result
+
+    def union(self, other: LoopHandle) -> list[LoopHandle]:
+        data = request("LoopUnion", params=(self.id, other.id))
+        response = self._interface(data)
+        return [LoopHandle(x, self._interface) for x in response.result]
+
+    def intersection(self, other: LoopHandle) -> list[LoopHandle]:
+        data = request("LoopIntersect", params=(self.id, other.id))
+        response = self._interface(data)
+        return [LoopHandle(x, self._interface) for x in response.result]
 
 
 class LoopScratchPad:

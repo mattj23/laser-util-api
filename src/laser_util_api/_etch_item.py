@@ -96,7 +96,9 @@ class EtchTransaction:
                            self._interface.convert_to_api(width))
         self._payload.append(payload)
 
-    def add_text(self, position: Vector, r: float, text: str, font_id: int, vertical: VAlign, horizontal: HAlign):
+    def add_text(self, position: Vector, r: float, text: str, font_id: int,
+                 vertical: VAlign = VAlign.CENTER,
+                 horizontal: HAlign = HAlign.CENTER):
         """
         Add text to the etch item.
         :param position: The reference position of the text
