@@ -456,3 +456,24 @@ for i in range(5):
     # function documentation for details
     etch.add_text(mark - Vector(0, 0.25), 0, f"{i + 1}", 1, VAlign.CENTER, HAlign.CENTER)
 ```
+
+Adding a large amount of items to an etch feature can involve a lot of back and forth traffic and waiting while the user interface updates.  Transactions consisting of many batched etch entities can be created using the `with` syntax.  The transaction object (`t` in the example below) has the same features as the etch object in the example above, except that it is caching the operations instead of performing them.  When the context manager ends as the program exits the scope of the `with` block, a single large transaction will be performed creating all the cached elements at once.
+
+```python
+from laser_util_api import import ApiClient, Vector
+
+client = ApiClient(units=Units.INCHES)
+
+# Create the etch entity
+etch = client.create.etch()
+etch.name = "Example Etch Markings"
+
+# We're going to create a grid pattern of hatch marks, spaced every inch.
+with etch.transaction() as t:
+    for i in range(10):
+        for j in range(10):
+            x = i + 0.5
+            y = j + 0.5
+            t.add_line(Vector(x - 0.125, y), Vector(x + 0.125, y), 0.02)
+            t.add_line(Vector(x, y - 0.125), Vector(x, y + 0.125), 0.02)
+```
