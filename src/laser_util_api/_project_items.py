@@ -5,7 +5,7 @@ from jsonrpcclient import request, Ok
 from uuid import UUID
 
 from ._client_interface import ApiInterface
-from .vector import Xyr
+from .vector import Xyr, Aabb, Vector
 
 
 class ProjectItem:
@@ -16,6 +16,10 @@ class ProjectItem:
 
         self._name = values["Info"]["Name"]
         self._tags = values["Info"]["Tags"]
+
+        b_min = Vector(values["Bounds"]["MinX"], values["Bounds"]["MinY"])
+        b_max = Vector(values["Bounds"]["MaxX"], values["Bounds"]["MaxY"])
+        self._aabb = Aabb(self._interface.convert_from_api(b_min), self._interface.convert_from_api(b_max))
 
         self._origin_id = values["Info"]["Origin"]["Id"]
         self._origin_parent = UUID(values["Info"]["Origin"]["ParentId"])
@@ -33,6 +37,10 @@ class ProjectItem:
     @property
     def visible(self) -> bool:
         return self._visible
+
+    @property
+    def aabb(self) -> Aabb:
+        return self._aabb
 
     @visible.setter
     def visible(self, value: bool):
@@ -132,6 +140,11 @@ class ProjectItem:
             raise Exception("Failed to set entity origin parent")
         self._origin_parent = value
 
+    def zoom_to(self):
+        data = request("ZoomToEntity", params=[self._id_str()])
+        response = self._interface(data)
+        if not response.result:
+            raise Exception("Failed to zoom to entity")
 
     def delete(self):
         data = request("DeleteEntity", params=[self._id_str()])

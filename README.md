@@ -75,6 +75,25 @@ print(client.project.path())
 print(client.project.name())
 ```
 
+## User Interface
+
+The API offers some minimal control over the UI.  Specifically, you can zoom the viewport to the bed, to fit all visible objects, or to a specific entity.
+
+```python 
+client = ApiClient()
+
+# Zooms to fit the entire bed in the viewport
+client.ui.zoom_to_bed()
+
+# Zooms to fit all visible objects into the viewport
+client.ui.zoom_to_fit()
+
+# Zoom to fit a single project item into the viewport. See the documentation
+# on project items for more information on how to retrieve them.
+client.tree[0].zoom_to()
+
+```
+
 ## Work Settings Functions
 
 Work settings functions control things like the selected material, the kerf, and fonts.  They are accessed through the `work_settings` category of the client.

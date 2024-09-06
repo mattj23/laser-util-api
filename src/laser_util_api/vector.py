@@ -26,6 +26,7 @@ class Units(Enum):
     def suffix(self):
         return "mm" if self == Units.MM else "in"
 
+
 @dataclass
 class Xyr:
     x: float
@@ -145,6 +146,7 @@ class Transform:
         return Transform(numpy.array([[numpy.cos(theta), -numpy.sin(theta), 0],
                                       [numpy.sin(theta), numpy.cos(theta), 0],
                                       [0, 0, 1]]))
+
     @staticmethod
     def translate(*args):
         if len(args) == 2:
@@ -164,3 +166,82 @@ class Transform:
 
     def invert(self) -> Transform:
         return Transform(numpy.linalg.inv(self.matrix))
+
+
+class Aabb:
+    def __init__(self, min_bound: Vector, max_bound: Vector):
+        self.min_bound = min_bound
+        self.max_bound = max_bound
+        self.__corners = None
+
+    @property
+    def center(self) -> Vector:
+        return (self.max_bound + self.min_bound) * 0.5
+
+    @property
+    def extent(self) -> Vector:
+        return self.max_bound - self.min_bound
+
+    @property
+    def corners(self) -> list[Vector]:
+        if self.__corners is None:
+            self.__corners = [
+                Vector(self.min_bound.x, self.min_bound.y),
+                Vector(self.min_bound.x, self.max_bound.y),
+                Vector(self.max_bound.x, self.max_bound.y),
+                Vector(self.max_bound.x, self.min_bound.y),
+            ]
+        return self.__corners
+
+    def merged_with(self, other: Aabb) -> Aabb:
+        return Aabb(Vector(min(self.min_bound.x, other.min_bound.x), min(self.min_bound.y, other.min_bound.y)),
+                    Vector(max(self.max_bound.x, other.max_bound.x), max(self.max_bound.y, other.max_bound.y)))
+
+    def __intersects_aabb(self, box: Aabb) -> bool:
+        if self.max_bound.x < box.min_bound.x or self.min_bound.x > box.max_bound.x:
+            return False
+
+        if self.max_bound.y < box.min_bound.y or self.min_bound.y > box.max_bound.y:
+            return False
+
+        return True
+
+    def __intersects_vector(self, v: Vector) -> bool:
+        return (self.min_bound.x <= v.x <= self.max_bound.x and
+                self.min_bound.y <= v.y <= self.max_bound.y)
+
+    def intersects(self, geom: Union[Aabb, Vector]) -> bool:
+        if isinstance(geom, Aabb):
+            return self.__intersects_aabb(geom)
+        elif isinstance(geom, Vector):
+            return self.__intersects_vector(geom)
+
+        raise NotImplemented(f"No intersection method for type {type(geom)}")
+
+    def closest_point(self, geom: Union[Vector]) -> Vector:
+        if isinstance(geom, Vector):
+            cx = max(min(geom.x, self.max_bound.x), self.min_bound.x)
+            cy = max(min(geom.y, self.max_bound.y), self.min_bound.y)
+            return Vector(cx, cy)
+
+        raise NotImplemented(f"No closest point method for type {type(geom)}")
+
+    def closest_distance(self, geom: Union[Vector]) -> float:
+        p = self.closest_point(geom)
+        return (p - geom).norm()
+
+    def farthest_distance(self, geom: Union[Vector]) -> float:
+        p = self.farthest_point(geom)
+        return (p - geom).norm()
+
+    def farthest_point(self, geom: Union[Vector]) -> Vector:
+        if isinstance(geom, Vector):
+            return max(self.corners, key=lambda v: v.distance_to(geom))
+
+        raise NotImplemented(f"No closest point method for type {type(geom)}")
+
+    @staticmethod
+    def from_points(points: list[Vector]) -> Aabb:
+        xs = [p.x for p in points]
+        ys = [p.y for p in points]
+        return Aabb(Vector(min(xs), min(ys)), Vector(max(xs), max(ys)))

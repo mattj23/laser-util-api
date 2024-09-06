@@ -16,6 +16,7 @@ from jsonrpcclient import request, parse, Error, Ok
 
 from ._project_items import ProjectItem
 
+
 # ==========================================================================================
 # Body and Loop Scratch Workspace
 # ==========================================================================================
@@ -23,6 +24,7 @@ class ScratchPad:
     def __init__(self, interface: ApiInterface):
         self.loops = LoopScratchPad(interface)
         self.bodies = BodyScratchPad(interface)
+
 
 # ==========================================================================================
 # High-level Project Methods
@@ -58,6 +60,7 @@ class ProjectCommands:
         data = request("OpenProject", params=(path,))
         response = self._rpc(data)
         return response.result
+
 
 # ==========================================================================================
 # WorkSettings Methods
@@ -123,7 +126,6 @@ class WorkSettingsCommands:
         return response.result
 
 
-
 # ==========================================================================================
 # Project Tree/Entity Methods
 # ==========================================================================================
@@ -159,15 +161,16 @@ class TreeCommands:
 
     def _by_id(self, id: str) -> ProjectItem:
         """ Find an entity by its ID """
-        data = request("FindEntity", params=(id, ))
+        data = request("FindEntity", params=(id,))
         response = self._rpc(data)
         return create_entity(response.result, self._rpc)
 
     def with_tag(self, tag: str) -> list[ProjectItem]:
         """ Find all entities with a specific tag """
-        data = request("GetEntitiesByTag", params=(tag, ))
+        data = request("GetEntitiesByTag", params=(tag,))
         response = self._rpc(data)
         return [create_entity(item, self._rpc) for item in response.result]
+
 
 class _TreeIterator:
     def __init__(self, items: list[ProjectItem]):
@@ -183,6 +186,26 @@ class _TreeIterator:
         item = self._items[self._index]
         self._index += 1
         return item
+
+
+# ==========================================================================================
+# User Interface Methods
+# ==========================================================================================
+
+class UiCommands:
+    def __init__(self, interface: ApiInterface):
+        self._rpc = interface
+
+    def zoom_to_fit(self):
+        data = request("ZoomToFit")
+        response = self._rpc(data)
+        return response.result
+
+    def zoom_to_bed(self):
+        data = request("ZoomToBed")
+        response = self._rpc(data)
+        return response.result
+
 
 # ==========================================================================================
 # Entity Creation
@@ -222,6 +245,7 @@ class ApiClient:
         self.tree = TreeCommands(self._interface)
         self.create = CreationCommands(self._interface)
         self.work_settings = WorkSettingsCommands(self._interface)
+        self.ui = UiCommands(self._interface)
 
     def close(self):
         if self.socket is not None:
@@ -248,7 +272,7 @@ class ApiClient:
 
         time.sleep(0.010)
 
-        self.socket.settimeout(5)
+        # self.socket.settimeout(5)
         response = b""
         while True:
             try:
@@ -266,4 +290,3 @@ class ApiClient:
         if isinstance(result, Error):
             raise Exception(result.message)
         return result
-

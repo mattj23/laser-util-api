@@ -1,8 +1,8 @@
 from jsonrpcclient import request
 
-from . import Xyr
 from ._client_interface import ApiInterface
 from ._loop_workspace import LoopHandle
+from .vector import Aabb, Vector, Xyr
 
 
 class BodyHandle:
@@ -34,6 +34,13 @@ class BodyHandle:
         response = self._interface(data)
         return response.result
 
+    @property
+    def bounds(self) -> Aabb:
+        data = request("GetBodyBounds", params=(self.id, ))
+        response = self._interface(data)
+        b_min = Vector(response.result["MinX"], response.result["MinY"])
+        b_max = Vector(response.result["MaxX"], response.result["MaxY"])
+        return Aabb(self._interface.convert_from_api(b_min), self._interface.convert_from_api(b_max))
 
 class BodyScratchPad:
     def __init__(self, interface: ApiInterface):

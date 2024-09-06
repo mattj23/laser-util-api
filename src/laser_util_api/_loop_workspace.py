@@ -2,7 +2,7 @@ from __future__ import annotations
 from jsonrpcclient import request, Ok
 
 from ._client_interface import ApiInterface
-from .vector import Vector, Xyr
+from .vector import Vector, Xyr, Aabb
 
 
 class LoopHandle:
@@ -73,6 +73,14 @@ class LoopHandle:
         data = request("LoopIntersect", params=(self.id, other.id))
         response = self._interface(data)
         return [LoopHandle(x, self._interface) for x in response.result]
+
+    @property
+    def bounds(self) -> Aabb:
+        data = request("GetLoopBounds", params=(self.id, ))
+        response = self._interface(data)
+        b_min = Vector(response.result["MinX"], response.result["MinY"])
+        b_max = Vector(response.result["MaxX"], response.result["MaxY"])
+        return Aabb(self._interface.convert_from_api(b_min), self._interface.convert_from_api(b_max))
 
 
 class LoopScratchPad:
